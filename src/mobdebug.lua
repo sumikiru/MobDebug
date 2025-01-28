@@ -19,7 +19,7 @@ end)("os")
 
 local mobdebug = {
   _NAME = "mobdebug",
-  _VERSION = "0.805",
+  _VERSION = "0.805sumikiru",
   _COPYRIGHT = "Paul Kulchenko",
   _DESCRIPTION = "Mobile Remote Debugger for the Lua programming language",
   port = os and os.getenv and tonumber((os.getenv("MOBDEBUG_PORT"))) or 8172,
@@ -126,7 +126,7 @@ local server
 local buf
 local outputs = {}
 local iobase = {print = print}
-local basedir = ""
+local basedir = "C:/PathtoTheScriptsBase"
 local deferror = "execution aborted at default debugee"
 local debugee = function ()
   local a = 1
@@ -495,7 +495,7 @@ local function is_pending(peer)
   -- if there is something already in the buffer, skip check
   if not buf and checkcount >= mobdebug.checkcount then
     peer:settimeout(0) -- non-blocking
-    buf = peer:receive(1)
+    -- buf = peer:receive(1)
     peer:settimeout() -- back to blocking
     checkcount = 0
   end
@@ -717,6 +717,12 @@ local function debug_hook(event, line)
       if is_safe(stack_level) then error(abort) end
     elseif not status and res then
       error(res, 2) -- report any other (internal) errors back to the application
+      -- Manual addition of a judgment condition: whether the debug program is manually terminated in the IDE. If so, output and exit directly without reporting an error.
+      -- The judgment condition cannot be guaranteed to be entirely accurate.
+    elseif not status and res and res ~= 'done' and res ~= 'stack' and res ~= 'exit' and not abort then
+      io.stderr:write('Debugging ended: You have manually terminated the debugging session.')
+      -- error(res, 2)
+      mobdebug.onexit(1, true)
     end
 
     if vars then restore_vars(vars) end
